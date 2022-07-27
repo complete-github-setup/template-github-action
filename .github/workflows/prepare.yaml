@@ -1,0 +1,175 @@
+# This script will prepare a new repository based on the github action template.
+#
+# prerequisites in account that owns the orgnisation:
+# - Personal access token with repos:write access
+#
+# prerequisites in organisation that contain repository based on template:
+# - Secret in the github organisation where the repository will be created based on the template
+#   - Name the secret "TEMPLATE_TOKEN"
+# - Create team called "repository-admins"
+#
+# usage:
+# When a new repository is create based on the template-github-action this script will be executed automatically.
+#
+# The script will:
+# - Ensure that the repository is public
+# - Only allow squash merge in pull requests
+# - Add the github action template as a collaborator
+# - Set the team github-action-admins as admin of the repository
+# - Add topics action and github-action
+# - Add the required files to the repository
+# - Create a pull request with the changes
+
+name: prepare repository script
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: repository modifications
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.TEMPLATE_TOKEN }}
+          script: |
+            core.startGroup('Retrieving repository information');
+            const repositoryResponse = await github.repos.get({ owner: context.repo.owner, repo: context.repo.repo });
+            core.info(JSON.stringify(repositoryResponse, null, 2));
+            core.exportVariable('REPOSITORY_NAME', repositoryResponse.data.name);
+            core.exportVariable('REPOSITORY_DESCRIPTION', repositoryResponse.data.description);
+            core.endGroup();
+
+            core.startGroup('Update pull request merge options and repository visibility');
+            const prResponse = await github.repos.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              visibility: 'public', // GitHub Actions needs to be public
+              allow_merge_commit: false,
+              allow_rebase_merge: false,
+              mediaType: {
+                previews: ["nebula"]
+              }
+            });
+            core.info(JSON.stringify(prResponse, null, 2));
+            core.endGroup();
+
+            core.startGroup('Set InCloud team as admin for repository');
+            const updateInCloudResponse = await github.teams.addOrUpdateRepoPermissionsInOrg({
+              org: context.repo.owner,
+              team_slug: 'repository-admins',
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              permission: 'admin'
+            });
+            core.info(JSON.stringify(updateInCloudResponse, null, 2));
+            core.endGroup();
+
+            core.startGroup('Add repository topics');            
+            const topicsResponse = await github.repos.replaceAllTopics({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              names: ['action', 'github-action']
+            });
+            core.info(JSON.stringify(topicsResponse, null, 2));
+            core.endGroup();
+
+      - name: checkout code
+        uses: actions/checkout@v3
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: current
+
+      - name: create package.json
+        shell: bash
+        run: npm init -y
+
+      - name: install dependencies
+        shell: bash
+        run: npm install --save @actions/core
+
+      - name: install dev dependencies
+        shell: bash
+        run: npm install --save-dev @types/jest @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-jest eslint-plugin-prettier jest prettier ts-jest typescript ic-build
+
+      - name: install modules only used in this workflow
+        shell: bash
+        run: npm install json write-yaml --no-save
+
+      - name: create action.yaml
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const yaml = require('write-yaml');
+            const { REPOSITORY_NAME, REPOSITORY_DESCRIPTION } = process.env;
+            const content = {name: REPOSITORY_NAME, description: REPOSITORY_DESCRIPTION, runs: { using: 'node12', main: 'dist/index.js'} };
+            yaml('./action.yaml', content, function(err) {
+              console.log('Error creating action.yaml file', err);
+            });
+
+      - name: debug
+        shell: bash
+        run: cat package.json && ls -a
+
+      - name: add scripts
+        env:
+          AUTHOR: ${{ github.actor }}
+        shell: bash
+        run: |
+          ./node_modules/.bin/json -I -f package.json -e "this.version=\"0.0.1\""
+          ./node_modules/.bin/json -I -f package.json -e "this.description=\"$REPOSITORY_DESCRIPTION\""
+          ./node_modules/.bin/json -I -f package.json -e "this.author=\"$AUTHOR\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts.build=\"ic-build\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts.test=\"jest\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts['test:watch']=\"jest --watch\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts['test:coverage']=\"jest --collectCoverage\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts['prettier:format']=\"prettier --config .prettierrc --write .\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts['prettier:check']=\"prettier --config .prettierrc --check .\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts.lint=\"eslint **/*.{js,ts,tsx} --fix --no-error-on-unmatched-pattern\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts['prepare:push']=\"npm run prettier:format && npm run lint && npm run test && npm run build\""
+
+      - name: create readme file
+        shell: bash
+        run: |
+          printf """
+            ![last commit](https://badges.cd.topdanmark.local/github/last-commit/$GITHUB_REPOSITORY?style=for-the-badge) 
+            ![GitHub package.json version (branch)](https://badges.cd.topdanmark.local/github/package-json/v/$GITHUB_REPOSITORY/main?style=for-the-badge)  
+            # $REPOSITORY_NAME  
+            $REPOSITORY_DESCRIPTION
+          """ > README.md
+
+      - name: format with prettier
+        shell: bash
+        run: npm run prettier:format
+
+      - name: build action
+        shell: bash
+        run: npm run build
+
+      - name: remove prepare script from target repo
+        shell: bash
+        run: rm ./.github/workflows/prepare-new-repo.yaml
+
+      - name: create pull request with changes
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.TEMPLATE_TOKEN }}
+          delete-branch: true
+          branch: prepare
+          title: Automated change by prepare action
+          commit-message: prepare changes - [skip actions]
+          body: |
+            This pull request have been opened automatically by the GitHub action that executed when the repository was created.
+
+            To get startet working on this project do the following:
+            - Approve this pull request and merge it into the main branch
+            - Clone the repository
+            - Create a feature branch and start working
+
+            Happy coding!!!
+          draft: false
