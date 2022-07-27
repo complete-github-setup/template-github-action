@@ -30,11 +30,13 @@ on:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: repository modifications
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.TEMPLATE_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             core.startGroup('Retrieving repository information');
             const repositoryResponse = await github.repos.get({ owner: context.repo.owner, repo: context.repo.repo });
@@ -158,7 +160,7 @@ jobs:
       - name: create pull request with changes
         uses: peter-evans/create-pull-request@v3
         with:
-          token: ${{ secrets.TEMPLATE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           delete-branch: true
           branch: prepare
           title: Automated change by prepare action
