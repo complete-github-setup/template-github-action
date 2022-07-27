@@ -39,14 +39,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             core.startGroup('Retrieving repository information');
-            const repositoryResponse = await github.repos.get({ owner: context.repo.owner, repo: context.repo.repo });
+            const repositoryResponse = await github.rest.repos.get({ owner: context.repo.owner, repo: context.repo.repo });
             core.info(JSON.stringify(repositoryResponse, null, 2));
             core.exportVariable('REPOSITORY_NAME', repositoryResponse.data.name);
             core.exportVariable('REPOSITORY_DESCRIPTION', repositoryResponse.data.description);
             core.endGroup();
 
             core.startGroup('Update pull request merge options and repository visibility');
-            const prResponse = await github.repos.update({
+            const prResponse = await github.rest.repos.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               visibility: 'public', // GitHub Actions needs to be public
@@ -60,7 +60,7 @@ jobs:
             core.endGroup();
 
             core.startGroup('Set InCloud team as admin for repository');
-            const updateInCloudResponse = await github.teams.addOrUpdateRepoPermissionsInOrg({
+            const updateInCloudResponse = await github.rest.teams.addOrUpdateRepoPermissionsInOrg({
               org: context.repo.owner,
               team_slug: 'repository-admins',
               owner: context.repo.owner,
@@ -71,7 +71,7 @@ jobs:
             core.endGroup();
 
             core.startGroup('Add repository topics');            
-            const topicsResponse = await github.repos.replaceAllTopics({
+            const topicsResponse = await github.rest.repos.replaceAllTopics({
               owner: context.repo.owner,
               repo: context.repo.repo,
               names: ['action', 'github-action']
