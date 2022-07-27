@@ -6,8 +6,9 @@
 # prerequisites in organisation that contain repository based on template:
 # - Secret in the github organisation where the repository will be created based on the template
 #   - Name the secret "TEMPLATE_TOKEN"
+#   - Note that secrets can not be read on private repositories unless you have an upgraded plan.
 # - Create team called "repository-admins"
-#
+# 
 # usage:
 # When a new repository is create based on the template-github-action this script will be executed automatically.
 #
