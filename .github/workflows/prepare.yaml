@@ -58,7 +58,7 @@ jobs:
             core.info(JSON.stringify(prResponse, null, 2));
             core.endGroup();
 
-            core.startGroup('Set InCloud team as admin for repository');
+            core.startGroup('Set repository-admins team as admin for repository');
             const updateInCloudResponse = await github.rest.teams.addOrUpdateRepoPermissionsInOrg({
               org: context.repo.owner,
               team_slug: 'repository-admins',
@@ -96,7 +96,7 @@ jobs:
 
       - name: install dev dependencies
         shell: bash
-        run: npm install --save-dev @types/jest @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-jest eslint-plugin-prettier jest prettier ts-jest typescript ic-build
+        run: npm install --save-dev @types/jest @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-jest eslint-plugin-prettier jest prettier ts-jest typescript
 
       - name: install modules only used in this workflow
         shell: bash
