@@ -125,7 +125,7 @@ jobs:
           ./node_modules/.bin/json -I -f package.json -e "this.version=\"0.0.1\""
           ./node_modules/.bin/json -I -f package.json -e "this.description=\"$REPOSITORY_DESCRIPTION\""
           ./node_modules/.bin/json -I -f package.json -e "this.author=\"$AUTHOR\""
-          ./node_modules/.bin/json -I -f package.json -e "this.scripts.build=\"ic-build\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts.build=\"echo nobuild\""
           ./node_modules/.bin/json -I -f package.json -e "this.scripts.test=\"jest\""
           ./node_modules/.bin/json -I -f package.json -e "this.scripts['test:watch']=\"jest --watch\""
           ./node_modules/.bin/json -I -f package.json -e "this.scripts['test:coverage']=\"jest --collectCoverage\""
@@ -154,7 +154,7 @@ jobs:
 
       - name: remove prepare script from target repo
         shell: bash
-        run: rm ./.github/workflows/prepare-new-repo.yaml
+        run: rm ./.github/workflows/prepare.yaml
 
       - name: create pull request with changes
         uses: peter-evans/create-pull-request@v3
