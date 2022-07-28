@@ -1,0 +1,10 @@
+name: create draft pull request
+
+on: create
+
+jobs:
+  create-pull-request:
+    if: |
+      !contains(github.ref, 'main') 
+        && !contains(github.ref, 'prepare')
+    uses: complete-github-setup/.github/.github/workflows/create-draft-pr.yaml@main
