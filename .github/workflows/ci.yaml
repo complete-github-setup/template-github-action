@@ -1,0 +1,13 @@
+name: ci
+
+on:
+  push:
+    branches-ignore:
+      - "main"
+      - "prepare"
+    paths-ignore:
+      - "**.md" # ignore all markdown files
+
+jobs:
+  ci:
+    uses: complete-github-setup/.github/.github/workflows/ci.yaml@main

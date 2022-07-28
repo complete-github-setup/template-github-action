@@ -1,0 +1,24 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: choice
+        description: "Version (major, minor, patch)"
+        required: true
+        options:
+          - major
+          - minor
+          - patch
+        default: patch
+
+jobs:
+  ci:
+    uses: complete-github-setup/.github/.github/workflows/ci.yaml@main
+
+  release_version:
+    needs: ci
+    uses: complete-github-setup/.github/.github/workflows/release-github-action.yaml@main
+    with:
+      version: ${{ github.event.inputs.version }}

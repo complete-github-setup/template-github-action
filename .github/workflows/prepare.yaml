@@ -138,8 +138,8 @@ jobs:
         shell: bash
         run: |
           printf """
-            ![last commit](https://badges.cd.topdanmark.local/github/last-commit/$GITHUB_REPOSITORY?style=for-the-badge) 
-            ![GitHub package.json version (branch)](https://badges.cd.topdanmark.local/github/package-json/v/$GITHUB_REPOSITORY/main?style=for-the-badge)  
+            ![last commit](https://img.shields.io/github/last-commit/$GITHUB_REPOSITORY) 
+            ![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/$GITHUB_REPOSITORY/main)  
             # $REPOSITORY_NAME  
             $REPOSITORY_DESCRIPTION
           """ > README.md
