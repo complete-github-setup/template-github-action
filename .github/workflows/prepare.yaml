@@ -8,7 +8,7 @@
 #   - Name the secret "TEMPLATE_TOKEN"
 #   - Note that secrets can not be read on private repositories unless you have an upgraded plan.
 # - Create team called "repository-admins"
-# 
+#
 # usage:
 # When a new repository is create based on the template-github-action this script will be executed automatically.
 #
@@ -96,7 +96,7 @@ jobs:
 
       - name: install dev dependencies
         shell: bash
-        run: npm install --save-dev @types/jest @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-jest eslint-plugin-prettier jest prettier ts-jest typescript
+        run: npm install --save-dev @types/jest @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-jest eslint-plugin-prettier jest prettier ts-jest typescript eslint
 
       - name: install modules only used in this workflow
         shell: bash
@@ -125,7 +125,7 @@ jobs:
           ./node_modules/.bin/json -I -f package.json -e "this.version=\"0.0.1\""
           ./node_modules/.bin/json -I -f package.json -e "this.description=\"$REPOSITORY_DESCRIPTION\""
           ./node_modules/.bin/json -I -f package.json -e "this.author=\"$AUTHOR\""
-          ./node_modules/.bin/json -I -f package.json -e "this.scripts.build=\"echo nobuild\""
+          ./node_modules/.bin/json -I -f package.json -e "this.scripts.build=\"esbuild ./src/index.js --bundle --platform=node --minify-whitespace --outfile=dist/index.js\""
           ./node_modules/.bin/json -I -f package.json -e "this.scripts.test=\"jest\""
           ./node_modules/.bin/json -I -f package.json -e "this.scripts['test:watch']=\"jest --watch\""
           ./node_modules/.bin/json -I -f package.json -e "this.scripts['test:coverage']=\"jest --collectCoverage\""
